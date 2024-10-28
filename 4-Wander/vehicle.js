@@ -146,7 +146,15 @@ class Vehicle {
     translate(this.pos.x, this.pos.y);
     rotate(this.vel.heading());
     noFill();
-    stroke(255, 255, 0, 200); // Couleur jaune plus opaque
+    if (this.state === 'hunt') {
+      stroke(255, 0, 0, 200); // Rouge pour le prédateur en chasse
+    } else if (this.state === 'flee') {
+      stroke(0, 0, 255, 200); // Bleu pour la proie en fuite
+    } else if (this.state === 'reproduce') {
+      stroke(255, 0, 255, 200); // Rose pour la reproduction
+    } else {
+      stroke(255, 255, 0, 200); // Jaune par défaut
+    }
     arc(0, 0, this.visionDistance * 2, this.visionDistance * 2, -this.visionAngle / 2, this.visionAngle / 2);
     pop();
   }
@@ -250,12 +258,16 @@ class Prey extends Vehicle {
           this.stop();
           otherPrey.stop();
           otherPrey.turnTowards(this);
+          this.state = 'reproduce';
+          otherPrey.state = 'reproduce';
           setTimeout(() => {
             if (!this.disappeared && !otherPrey.disappeared) {
               preys.push(new Prey(random(width), random(height)));
             }
             this.reproducing = false;
             otherPrey.reproducing = false;
+            this.state = 'wander';
+            otherPrey.state = 'wander';
           }, 2000); // Arrêter pendant 2 secondes
         }
         return;
@@ -267,9 +279,9 @@ class Prey extends Vehicle {
     for (let predator of predators) {
       if (this.inSight(predator)) {
         this.reproducing = false; // Annuler la reproduction si un prédateur est détecté
+        this.state = 'flee';
         let steering = this.flee(predator.pos);
         this.applyForce(steering);
-        this.state = 'flee';
         this.stateTimer = 120; // 2 secondes à 60 FPS
         return;
       }
